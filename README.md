@@ -22,8 +22,9 @@ npm run dev      # dev server (HTTPS on LAN for iPhone testing)
 npm test         # vitest unit tests (dates, storage, backup, insights, feelings)
 npm run build    # type-check + production build to dist/
 npm run preview  # serve the production build
-npm run icons    # regenerate public/icons/ PNGs
 ```
+
+App icons in `public/icons/` are cropped/resized from the artwork in `assets/app-icon.jpeg`.
 
 ## Notes
 
