@@ -1,8 +1,10 @@
 import type { PersistedState, Settings, Tag } from '../types';
 import { newId } from '../lib/id';
 
-export const STORAGE_KEY = 'trace.v1';
-export const SCHEMA_VERSION = 1;
+export const STORAGE_KEY = 'feelnote.v2';
+export const SCHEMA_VERSION = 2;
+/** Pre-rename storage key; its 1-5 mood data doesn't map to the feeling model, so it's discarded. */
+export const LEGACY_STORAGE_KEY = 'trace.v1';
 
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
 

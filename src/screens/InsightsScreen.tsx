@@ -1,18 +1,33 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '../state/AppContext';
-import { MoodLineChart } from '../components/charts/MoodLineChart';
+import { ValenceLineChart } from '../components/charts/ValenceLineChart';
+import { FeelingTrendChart } from '../components/charts/FeelingTrendChart';
+import { TimeOfDayChart } from '../components/charts/TimeOfDayChart';
 import { TagBarChart } from '../components/charts/TagBarChart';
+import { TagFeelingChart } from '../components/charts/TagFeelingChart';
 import {
   bestWorstDays,
   computeStreaks,
-  dailyAverages,
-  dayOfWeekAverages,
+  dailyStats,
+  dayOfWeekStats,
+  feelingBreakdown,
   tagCorrelations,
+  tagFeelingCounts,
+  timeOfDayStats,
 } from '../lib/insights';
-import { MOODS, roundMood } from '../lib/mood';
+import { FEELING_META } from '../lib/feelings';
 import { addDays, dayName, formatDateShort, todayKey } from '../lib/dates';
+import type { DayPoint } from '../lib/insights';
 
 type Range = 30 | 90 | 0; // 0 = all
+
+function signedValence(v: number): string {
+  return `${v >= 0 ? '+' : ''}${v.toFixed(1)}`;
+}
+
+function dayValue(p: DayPoint): string {
+  return `${FEELING_META[p.dominant].emoji} ${signedValence(p.avgValence)}`;
+}
 
 export function InsightsScreen() {
   const { state } = useApp();
@@ -25,23 +40,26 @@ export function InsightsScreen() {
     return state.entries.filter((e) => e.dateKey >= cutoff);
   }, [state.entries, range, today]);
 
-  const daily = useMemo(() => dailyAverages(entries), [entries]);
+  const daily = useMemo(() => dailyStats(entries), [entries]);
   const streaks = useMemo(
     () => computeStreaks(new Set(state.entries.map((e) => e.dateKey)), today),
     [state.entries, today]
   );
   const { best, worst } = useMemo(() => bestWorstDays(daily), [daily]);
-  const dow = useMemo(() => dayOfWeekAverages(daily), [daily]);
+  const dow = useMemo(() => dayOfWeekStats(daily), [daily]);
+  const feelings = useMemo(() => feelingBreakdown(entries, today), [entries, today]);
+  const tod = useMemo(() => timeOfDayStats(entries), [entries]);
   const tagStats = useMemo(() => tagCorrelations(entries, state.tags), [entries, state.tags]);
+  const tagFeelings = useMemo(() => tagFeelingCounts(entries, state.tags), [entries, state.tags]);
 
-  const bestDow = dow.length ? dow.reduce((a, b) => (b.avg > a.avg ? b : a)) : null;
-  const worstDow = dow.length ? dow.reduce((a, b) => (b.avg < a.avg ? b : a)) : null;
+  const bestDow = dow.length ? dow.reduce((a, b) => (b.avgValence > a.avgValence ? b : a)) : null;
+  const worstDow = dow.length ? dow.reduce((a, b) => (b.avgValence < a.avgValence ? b : a)) : null;
 
   if (state.entries.length === 0) {
     return (
       <div>
         <div className="screen-title">Insights</div>
-        <div className="empty-hint">Log a few moods first — trends will show up here.</div>
+        <div className="empty-hint">Log a few feelings first — trends will show up here.</div>
       </div>
     );
   }
@@ -75,8 +93,22 @@ export function InsightsScreen() {
       </div>
 
       <div className="card">
-        <div className="chart-title">Mood over time</div>
-        <MoodLineChart daily={daily} />
+        <div className="chart-title">Wellbeing over time</div>
+        <ValenceLineChart daily={daily} />
+      </div>
+
+      <div className="card">
+        <div className="chart-title">Your feelings</div>
+        <FeelingTrendChart stats={feelings} />
+        <div className="chart-sub">How often each feeling shows up, week by week (last 8 weeks).</div>
+      </div>
+
+      <div className="card">
+        <div className="chart-title">Time of day</div>
+        <TimeOfDayChart stats={tod} />
+        <div className="chart-sub">
+          When you log entries, with the most common feeling and average wellbeing.
+        </div>
       </div>
 
       {(best.length > 0 || bestDow) && (
@@ -88,14 +120,14 @@ export function InsightsScreen() {
                 <span>Best weekday</span>
                 <span>
                   {dayName(bestDow.dow)}{' '}
-                  <span className="muted">{MOODS[roundMood(bestDow.avg)].emoji} {bestDow.avg.toFixed(1)}</span>
+                  <span className="muted">{signedValence(bestDow.avgValence)}</span>
                 </span>
               </div>
               <div className="stat-row">
                 <span>Toughest weekday</span>
                 <span>
                   {dayName(worstDow.dow)}{' '}
-                  <span className="muted">{MOODS[roundMood(worstDow.avg)].emoji} {worstDow.avg.toFixed(1)}</span>
+                  <span className="muted">{signedValence(worstDow.avgValence)}</span>
                 </span>
               </div>
             </>
@@ -104,8 +136,7 @@ export function InsightsScreen() {
             <div className="stat-row">
               <span>Best day</span>
               <span>
-                {formatDateShort(best[0].dateKey)}{' '}
-                <span className="muted">{MOODS[roundMood(best[0].avg)].emoji} {best[0].avg.toFixed(1)}</span>
+                {formatDateShort(best[0].dateKey)} <span className="muted">{dayValue(best[0])}</span>
               </span>
             </div>
           )}
@@ -114,7 +145,7 @@ export function InsightsScreen() {
               <span>Toughest day</span>
               <span>
                 {formatDateShort(worst[0].dateKey)}{' '}
-                <span className="muted">{MOODS[roundMood(worst[0].avg)].emoji} {worst[0].avg.toFixed(1)}</span>
+                <span className="muted">{dayValue(worst[0])}</span>
               </span>
             </div>
           )}
@@ -122,12 +153,20 @@ export function InsightsScreen() {
       )}
 
       <div className="card">
-        <div className="chart-title">Mood by tag</div>
+        <div className="chart-title">Tags that lift or drag</div>
         <TagBarChart stats={tagStats} />
         {tagStats.length > 0 && (
           <div className="chart-sub">
-            Average mood when tagged, vs your overall average. Needs ≥3 uses per tag.
+            Average wellbeing when tagged, vs your overall average. Needs ≥3 uses per tag.
           </div>
+        )}
+      </div>
+
+      <div className="card">
+        <div className="chart-title">What you tag each feeling</div>
+        <TagFeelingChart stats={tagFeelings} />
+        {tagFeelings.length > 0 && (
+          <div className="chart-sub">Which feelings show up alongside your most-used tags.</div>
         )}
       </div>
     </div>

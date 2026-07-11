@@ -15,7 +15,7 @@ function memStore(initial: Record<string, string> = {}): StorageLike & { data: R
 describe('loadState', () => {
   it('returns seeded defaults on an empty store', () => {
     const state = loadState(memStore());
-    expect(state.schemaVersion).toBe(1);
+    expect(state.schemaVersion).toBe(2);
     expect(state.entries).toEqual([]);
     expect(state.tags.length).toBeGreaterThan(0);
     expect(state.tags.every((t) => t.builtin)).toBe(true);
@@ -50,7 +50,8 @@ describe('saveState / loadState roundtrip', () => {
       createdAt: 123,
       updatedAt: 123,
       dateKey: '2026-07-11',
-      mood: 4,
+      feeling: 'happy',
+      intensity: 7,
       note: 'good session 💪',
       tagIds: [state.tags[0].id],
     });

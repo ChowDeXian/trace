@@ -1,4 +1,4 @@
-// Generates the PWA icons (dark tile + green mood-trace line) as PNGs with zero deps.
+// Generates the PWA icons (powder-blue tile + green feeling-trend line) as PNGs with zero deps.
 import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -43,8 +43,8 @@ function png(size, rgb) {
   return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
 }
 
-const BG = [13, 13, 13];
-const FG = [48, 196, 141];
+const BG = [176, 224, 230]; // powder blue #B0E0E6
+const FG = [47, 125, 79]; // pistachio ink #2F7D4F
 
 function drawIcon(size) {
   const px = Buffer.alloc(size * size * 3);

@@ -11,7 +11,8 @@ function sampleState(): PersistedState {
       createdAt: 1000,
       updatedAt: 2000,
       dateKey: '2026-07-10',
-      mood: 2,
+      feeling: 'sad',
+      intensity: 8,
       note: 'rough day',
       tagIds: [state.tags[0].id],
     },
@@ -20,7 +21,8 @@ function sampleState(): PersistedState {
       createdAt: 3000,
       updatedAt: 3000,
       dateKey: '2026-07-11',
-      mood: 5,
+      feeling: 'happy',
+      intensity: 6,
       note: '',
       tagIds: [],
     }
@@ -35,6 +37,12 @@ describe('export → import roundtrip', () => {
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.state).toEqual(state);
   });
+
+  it('writes the feelnote app discriminator', () => {
+    const backup = JSON.parse(serializeBackup(sampleState()));
+    expect(backup.app).toBe('feelnote');
+    expect(backup.schemaVersion).toBe(2);
+  });
 });
 
 describe('parseBackup validation', () => {
@@ -47,22 +55,40 @@ describe('parseBackup validation', () => {
     expect(result.ok).toBe(false);
   });
 
+  it('rejects old Trace backups (incompatible mood model)', () => {
+    const result = parseBackup(
+      JSON.stringify({ app: 'trace', schemaVersion: 1, entries: [], tags: [] })
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/Not a FeelNote backup/);
+  });
+
   it('rejects newer schema versions', () => {
     const result = parseBackup(
-      JSON.stringify({ app: 'trace', schemaVersion: 999, entries: [], tags: [] })
+      JSON.stringify({ app: 'feelnote', schemaVersion: 999, entries: [], tags: [] })
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toMatch(/newer version/);
   });
 
-  it('drops entries with invalid moods and malformed rows', () => {
+  it('drops entries with unknown feelings and malformed rows', () => {
     const backup = JSON.parse(serializeBackup(sampleState()));
-    backup.entries[0].mood = 17;
+    backup.entries[0].feeling = 'angry';
     backup.entries.push({ id: 'bad' }); // missing everything
     const result = parseBackup(JSON.stringify(backup));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.state.entries.map((e) => e.id)).toEqual(['e2']);
+    }
+  });
+
+  it('drops entries with out-of-range or fractional intensities', () => {
+    for (const intensity of [0, 11, 5.5, '5', null]) {
+      const backup = JSON.parse(serializeBackup(sampleState()));
+      backup.entries[0].intensity = intensity;
+      const result = parseBackup(JSON.stringify(backup));
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.state.entries.map((e) => e.id)).toEqual(['e2']);
     }
   });
 

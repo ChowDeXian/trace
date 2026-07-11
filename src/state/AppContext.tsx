@@ -7,7 +7,7 @@ import {
   type Dispatch,
   type ReactNode,
 } from 'react';
-import { loadState, saveState } from '../storage/storage';
+import { LEGACY_STORAGE_KEY, SCHEMA_VERSION, loadState, saveState } from '../storage/storage';
 import { initialAppState, reducer, type Action, type AppState } from './reducer';
 
 interface AppContextValue {
@@ -24,13 +24,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // best-effort durable storage on iOS home-screen installs
     navigator.storage?.persist?.().catch(() => {});
+    // fresh start: drop pre-rename Trace data (incompatible 1-5 mood model)
+    try {
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
   }, []);
 
   const { entries, tags, settings } = state;
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      saveState({ schemaVersion: 1, entries, tags, settings });
+      saveState({ schemaVersion: SCHEMA_VERSION, entries, tags, settings });
     }, 300);
     return () => {
       if (timer.current) clearTimeout(timer.current);
@@ -41,7 +47,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const flush = () => {
       if (document.visibilityState === 'hidden') {
-        saveState({ schemaVersion: 1, entries, tags, settings });
+        saveState({ schemaVersion: SCHEMA_VERSION, entries, tags, settings });
       }
     };
     document.addEventListener('visibilitychange', flush);

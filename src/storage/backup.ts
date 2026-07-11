@@ -1,10 +1,10 @@
 import type { BackupFile, Entry, PersistedState, Tag } from '../types';
-import { isMoodValue } from '../lib/mood';
+import { isFeeling, isIntensity } from '../lib/feelings';
 import { SCHEMA_VERSION, defaultSettings } from './storage';
 
 export function serializeBackup(state: PersistedState, exportedAt: Date = new Date()): string {
   const backup: BackupFile = {
-    app: 'trace',
+    app: 'feelnote',
     exportedAt: exportedAt.toISOString(),
     schemaVersion: state.schemaVersion,
     entries: state.entries,
@@ -26,14 +26,14 @@ export function parseBackup(text: string): ParseResult {
     return { ok: false, error: 'Not a valid JSON file.' };
   }
   if (raw == null || typeof raw !== 'object') {
-    return { ok: false, error: 'Not a Trace backup file.' };
+    return { ok: false, error: 'Not a FeelNote backup file.' };
   }
   const b = raw as Partial<BackupFile>;
-  if (b.app !== 'trace') {
-    return { ok: false, error: 'Not a Trace backup file.' };
+  if (b.app !== 'feelnote') {
+    return { ok: false, error: 'Not a FeelNote backup file.' };
   }
   if (typeof b.schemaVersion !== 'number' || b.schemaVersion > SCHEMA_VERSION) {
-    return { ok: false, error: 'Backup was made by a newer version of Trace.' };
+    return { ok: false, error: 'Backup was made by a newer version of FeelNote.' };
   }
   if (!Array.isArray(b.entries) || !Array.isArray(b.tags)) {
     return { ok: false, error: 'Backup file is malformed.' };
@@ -53,14 +53,14 @@ export function parseBackup(text: string): ParseResult {
     if (typeof en?.id !== 'string') continue;
     if (typeof en.createdAt !== 'number' || typeof en.dateKey !== 'string') continue;
     if (!DATE_KEY_RE.test(en.dateKey)) continue;
-    const mood = isMoodValue(en.mood) ? en.mood : null;
-    if (mood === null) continue;
+    if (!isFeeling(en.feeling) || !isIntensity(en.intensity)) continue;
     entries.push({
       id: en.id,
       createdAt: en.createdAt,
       updatedAt: typeof en.updatedAt === 'number' ? en.updatedAt : en.createdAt,
       dateKey: en.dateKey,
-      mood,
+      feeling: en.feeling,
+      intensity: en.intensity,
       note: typeof en.note === 'string' ? en.note : '',
       tagIds: Array.isArray(en.tagIds) ? en.tagIds.filter((id) => tagIds.has(id as string)) : [],
     });

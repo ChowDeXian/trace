@@ -1,11 +1,15 @@
-export type MoodValue = 1 | 2 | 3 | 4 | 5;
+export const FEELINGS = ['happy', 'calm', 'neutral', 'sad', 'anxious', 'frustrated'] as const;
+export type Feeling = (typeof FEELINGS)[number];
+
+export type Intensity = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 export interface Entry {
   id: string;
   createdAt: number; // epoch ms
   updatedAt: number; // epoch ms
   dateKey: string; // 'YYYY-MM-DD' in local time, frozen at save time
-  mood: MoodValue;
+  feeling: Feeling;
+  intensity: Intensity; // 1 = barely, 10 = overwhelming
   note: string;
   tagIds: string[];
 }
@@ -22,14 +26,14 @@ export interface Settings {
 }
 
 export interface PersistedState {
-  schemaVersion: 1;
+  schemaVersion: 2;
   entries: Entry[];
   tags: Tag[];
   settings: Settings;
 }
 
 export interface BackupFile extends PersistedState {
-  app: 'trace';
+  app: 'feelnote';
   exportedAt: string; // ISO
 }
 

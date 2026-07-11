@@ -13,12 +13,12 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Trace',
-        short_name: 'Trace',
-        description: 'Daily mood journal — log how you feel and why',
+        name: 'FeelNote',
+        short_name: 'FeelNote',
+        description: 'Daily feelings journal — log what you feel, how strongly, and why',
         display: 'standalone',
-        background_color: '#0D0D0D',
-        theme_color: '#0D0D0D',
+        background_color: '#E2F1F2',
+        theme_color: '#E2F1F2',
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }

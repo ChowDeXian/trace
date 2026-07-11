@@ -1,5 +1,6 @@
 import type { DayPoint } from '../lib/insights';
-import { MOODS, MOOD_VALUES, roundMood } from '../lib/mood';
+import { FEELINGS } from '../types';
+import { FEELING_META } from '../lib/feelings';
 import { formatMonth, monthGrid, todayKey, weekdayNames } from '../lib/dates';
 
 interface Props {
@@ -10,6 +11,14 @@ interface Props {
   selectedDay: string | null;
   onSelectDay: (key: string | null) => void;
   onNavigate: (year: number, month: number) => void;
+}
+
+/** Cell tint: dominant feeling's hue, deeper for higher average intensity. */
+function cellAlphaHex(avgIntensity: number): string {
+  const alpha = 0.18 + 0.42 * (avgIntensity / 10);
+  return Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0');
 }
 
 export function CalendarGrid({ year, month, daily, weekStartsOn, selectedDay, onSelectDay, onNavigate }: Props) {
@@ -40,7 +49,7 @@ export function CalendarGrid({ year, month, daily, weekStartsOn, selectedDay, on
         ))}
         {cells.map(({ key, inMonth }) => {
           const point = daily.get(key);
-          const mood = point ? MOODS[roundMood(point.avg)] : null;
+          const meta = point ? FEELING_META[point.dominant] : null;
           const classes = [
             'cal-cell',
             !inMonth && 'out',
@@ -54,21 +63,23 @@ export function CalendarGrid({ year, month, daily, weekStartsOn, selectedDay, on
             <button
               key={key}
               className={classes}
-              style={mood ? { background: `${mood.color}59` } : undefined}
+              style={
+                meta && point ? { background: meta.color + cellAlphaHex(point.avgIntensity) } : undefined
+              }
               onClick={() => onSelectDay(key === selectedDay ? null : key)}
               disabled={key > today}
             >
               {Number(key.slice(8))}
-              {mood && <span className="cal-dot" style={{ background: mood.color }} />}
+              {meta && <span className="cal-dot" style={{ background: meta.color }} />}
             </button>
           );
         })}
       </div>
       <div className="cal-legend">
-        {MOOD_VALUES.map((m) => (
-          <span key={m}>
-            <i style={{ background: MOODS[m].color }} />
-            {MOODS[m].label}
+        {FEELINGS.map((f) => (
+          <span key={f}>
+            <i style={{ background: FEELING_META[f].color }} />
+            {FEELING_META[f].label}
           </span>
         ))}
       </div>

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useApp } from '../state/AppContext';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { parseBackup, serializeBackup } from '../storage/backup';
-import { defaultState } from '../storage/storage';
+import { SCHEMA_VERSION, defaultState } from '../storage/storage';
 import { todayKey } from '../lib/dates';
 import type { PersistedState } from '../types';
 
@@ -17,7 +17,7 @@ export function SettingsScreen() {
 
   const exportBackup = () => {
     const json = serializeBackup({
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
       entries: state.entries,
       tags: state.tags,
       settings: state.settings,
@@ -26,7 +26,7 @@ export function SettingsScreen() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `trace-backup-${todayKey()}.json`;
+    a.download = `feelnote-backup-${todayKey()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     dispatch({ type: 'SET_SETTINGS', settings: { lastBackupAt: Date.now() } });
@@ -157,7 +157,7 @@ export function SettingsScreen() {
       </div>
 
       <div className="screen-sub" style={{ textAlign: 'center', marginTop: 20 }}>
-        Trace v0.1.0 · your data never leaves this device
+        FeelNote v0.2.0 · your data never leaves this device
       </div>
 
       {pendingImport && (

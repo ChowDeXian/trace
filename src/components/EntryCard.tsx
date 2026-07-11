@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Entry } from '../types';
-import { MOODS } from '../lib/mood';
+import { FEELING_META } from '../lib/feelings';
 import { formatTime } from '../lib/dates';
 import { useApp } from '../state/AppContext';
 import { ConfirmModal } from './ConfirmModal';
@@ -14,7 +14,7 @@ interface Props {
 export function EntryCard({ entry, showActions = true }: Props) {
   const { state, dispatch } = useApp();
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const meta = MOODS[entry.mood];
+  const meta = FEELING_META[entry.feeling];
   const tagNames = entry.tagIds
     .map((id) => state.tags.find((t) => t.id === id)?.name)
     .filter((n): n is string => !!n);
@@ -31,7 +31,7 @@ export function EntryCard({ entry, showActions = true }: Props) {
       <div className="entry-body">
         <div className="entry-meta">
           <span className="entry-mood-label" style={{ color: meta.color }}>
-            {meta.label}
+            {meta.label} · {entry.intensity}/10
           </span>
           <span>{formatTime(entry.createdAt)}</span>
         </div>

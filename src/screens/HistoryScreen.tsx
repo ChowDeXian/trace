@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useApp } from '../state/AppContext';
 import { EntryCard } from '../components/EntryCard';
 import { CalendarGrid } from '../components/CalendarGrid';
-import { dailyAverages, type DayPoint } from '../lib/insights';
+import { dailyStats, type DayPoint } from '../lib/insights';
 import { formatDateFull, todayKey } from '../lib/dates';
 
 type View = 'calendar' | 'timeline';
@@ -18,7 +18,7 @@ export function HistoryScreen() {
 
   const daily = useMemo(() => {
     const map = new Map<string, DayPoint>();
-    for (const p of dailyAverages(state.entries)) map.set(p.dateKey, p);
+    for (const p of dailyStats(state.entries)) map.set(p.dateKey, p);
     return map;
   }, [state.entries]);
 
@@ -102,7 +102,7 @@ export function HistoryScreen() {
       {groups.length === 0 ? (
         <div className="empty-hint">
           {state.entries.length === 0
-            ? 'No entries yet. Log your first mood on the Today tab.'
+            ? 'No entries yet. Log your first feeling on the Today tab.'
             : 'Nothing matches.'}
         </div>
       ) : (

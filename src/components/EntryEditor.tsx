@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import type { Entry, MoodValue } from '../types';
-import { MoodPicker } from './MoodPicker';
+import type { Entry, Feeling, Intensity } from '../types';
+import { FeelingPicker } from './FeelingPicker';
 import { TagPicker } from './TagPicker';
 import { newId } from '../lib/id';
 import { todayKey } from '../lib/dates';
@@ -14,7 +14,8 @@ interface Props {
 
 export function EntryEditor({ entry, onDone }: Props) {
   const { dispatch } = useApp();
-  const [mood, setMood] = useState<MoodValue | null>(entry?.mood ?? null);
+  const [feeling, setFeeling] = useState<Feeling | null>(entry?.feeling ?? null);
+  const [intensity, setIntensity] = useState<Intensity>(entry?.intensity ?? 5);
   const [note, setNote] = useState(entry?.note ?? '');
   const [tagIds, setTagIds] = useState<string[]>(entry?.tagIds ?? []);
   const noteRef = useRef<HTMLTextAreaElement>(null);
@@ -27,12 +28,12 @@ export function EntryEditor({ entry, onDone }: Props) {
   };
 
   const save = () => {
-    if (mood === null) return;
+    if (feeling === null) return;
     const now = Date.now();
     if (entry) {
       dispatch({
         type: 'UPDATE_ENTRY',
-        entry: { ...entry, mood, note: note.trim(), tagIds, updatedAt: now },
+        entry: { ...entry, feeling, intensity, note: note.trim(), tagIds, updatedAt: now },
       });
     } else {
       dispatch({
@@ -42,12 +43,14 @@ export function EntryEditor({ entry, onDone }: Props) {
           createdAt: now,
           updatedAt: now,
           dateKey: todayKey(),
-          mood,
+          feeling,
+          intensity,
           note: note.trim(),
           tagIds,
         },
       });
-      setMood(null);
+      setFeeling(null);
+      setIntensity(5);
       setNote('');
       setTagIds([]);
       if (noteRef.current) noteRef.current.style.height = 'auto';
@@ -58,7 +61,12 @@ export function EntryEditor({ entry, onDone }: Props) {
   return (
     <div className="card">
       <div className="chart-title">{entry ? 'Edit entry' : 'How are you feeling?'}</div>
-      <MoodPicker value={mood} onChange={setMood} />
+      <FeelingPicker
+        feeling={feeling}
+        intensity={intensity}
+        onFeelingChange={setFeeling}
+        onIntensityChange={setIntensity}
+      />
       <textarea
         ref={noteRef}
         value={note}
@@ -79,7 +87,7 @@ export function EntryEditor({ entry, onDone }: Props) {
             Cancel
           </button>
         )}
-        <button className="btn btn-primary" disabled={mood === null} onClick={save}>
+        <button className="btn btn-primary" disabled={feeling === null} onClick={save}>
           {entry ? 'Save changes' : 'Save entry'}
         </button>
       </div>
