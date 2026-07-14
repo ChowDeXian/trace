@@ -1,5 +1,7 @@
 # FeelNote
 
+Idea & concept by [@yenthung888](https://github.com/yenthung888) · built by [@ChowDeXian](https://github.com/ChowDeXian)
+
 A personal daily feelings journal — log what you feel, how strongly, and why, then look back to see what drove it. Offline-first PWA, installable on iPhone. All data stays on your device.
 
 Built for identifying triggers, recognizing patterns over time, monitoring mental health, and making feelings easier to discuss in therapy.
